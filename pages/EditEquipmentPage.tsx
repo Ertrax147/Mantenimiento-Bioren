@@ -6,7 +6,7 @@ import EquipmentForm from '../components/equipment/EquipmentForm';
 import { Equipment } from '../types';
 import Button from '../components/ui/Button';
 import { transformApiDataToEquipment } from '../utils/maintenance'; // Importamos nuestra función de utilidad
-import { getEquipmentById } from '../lib/api/services/equipmentService';
+import { getEquipmentById, updateEquipment } from '../lib/api/services/equipmentService';
 
 const EditEquipmentPage: React.FC = () => {
     const navigate = useNavigate();
@@ -48,19 +48,7 @@ const EditEquipmentPage: React.FC = () => {
         }
 
         try {
-            const response = await fetch(`http://localhost:4000/api/equipment/${equipmentId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(equipmentData),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || "Error al actualizar el equipo.");
-            }
-
+            await updateEquipment(equipmentId, equipmentData);
             alert("¡Equipo actualizado exitosamente!");
             navigate(`/equipment/${equipmentId}`); // Redirige a la página de detalles
 

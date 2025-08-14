@@ -38,10 +38,14 @@ public class EquipmentService {
     public Equipment getEquipmentById(Long id, User user) {
         Equipment equipment = equipmentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Equipo no encontrado"));
-        if (user.getRole() == UserRole.BIOREN_ADMIN ||
-            (user.getUnit() != null && user.getUnit().equals(equipment.getLocationUnit()))) {
+        // Un admin puede ver cualquier equipo. Otros usuarios solo pueden ver equipos de su unidad.
+        if (user.getRole() == UserRole.BIOREN_ADMIN) {
             return equipment;
         }
+        if (user.getUnit() != null && user.getUnit().equals(equipment.getLocationUnit())) {
+            return equipment;
+        }
+
         throw new AccessDeniedException("No tienes permiso para ver este equipo");
     }
 

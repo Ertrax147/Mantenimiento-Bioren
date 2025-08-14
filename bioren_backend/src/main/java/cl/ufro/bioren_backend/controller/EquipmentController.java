@@ -60,9 +60,11 @@ public class EquipmentController {
      */
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('BIOREN_ADMIN') or hasRole('UNIT_MANAGER')")
-    public Equipment update(@PathVariable Long id, @RequestBody Equipment equipment, @AuthenticationPrincipal UserPrincipal principal) {
+    public Equipment.EquipmentDTO update(@PathVariable Long id, @RequestBody Equipment equipment, @AuthenticationPrincipal UserPrincipal principal) {
         User user = principalToUser(principal);
-        return equipmentService.updateEquipment(id, equipment, user);
+        Equipment updatedEquipment = equipmentService.updateEquipment(id, equipment, user);
+        updatedEquipment.calcularProximaMantencionYStatus(); // Aseguramos que el estado se recalcule
+        return toDTO(updatedEquipment);
     }
 
     /**
