@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Equipment, MaintenanceRecord, EquipmentCriticality, UserRole } from '../types';
+import { Equipment, MaintenanceRecord, EquipmentCriticality, UserRole, User } from '../types';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import { getStatusColor, getCriticalityColor } from '../components/equipment/EquipmentListItem';
@@ -16,7 +16,9 @@ import Modal from '../components/ui/Modal';
 import TextInput from '../components/ui/TextInput';
 import DateInput from '../components/ui/DateInput';
 import FileInput from '../components/ui/FileInput';
+import SelectInput from '../components/ui/SelectInput';
 import { getEquipmentById, deleteEquipment, createMaintenanceRecord } from '../lib/api/services/equipmentService';
+import { getUsers } from '../lib/api/services/userService';
 
 const DetailItem: React.FC<{ label: string; value?: string | number | React.ReactNode; className?: string }> = ({ label, value, className }) => (
     <div className={`py-3 sm:grid sm:grid-cols-3 sm:gap-4 ${className}`}>
@@ -35,9 +37,20 @@ const EquipmentDetailPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [users, setUsers] = useState<User[]>([]);
 
     const [maintForm, setMaintForm] = useState({ description: '', performedBy: '', date: '' });
     const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
+
+    const fetchUsers = async () => {
+        try {
+            const usersData = await getUsers();
+            setUsers(usersData);
+        } catch (error) {
+            console.error("Error fetching users:", error);
+            // Opcional: mostrar un error al usuario
+        }
+    };
 
     const fetchAllData = async () => {
         if (!equipmentId) return;
@@ -57,9 +70,10 @@ const EquipmentDetailPage: React.FC = () => {
 
     useEffect(() => {
         fetchAllData();
+        fetchUsers();
     }, [equipmentId]);
 
-    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setMaintForm({ ...maintForm, [e.target.name]: e.target.value });
     };
 
@@ -198,7 +212,14 @@ const EquipmentDetailPage: React.FC = () => {
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Añadir Nuevo Registro de Mantenimiento">
                 <form onSubmit={handleMaintSubmit} className="space-y-4">
                     <DateInput label="Fecha del Mantenimiento" name="date" value={maintForm.date} onChange={handleFormChange} required />
-                    <TextInput label="Realizado Por" name="performedBy" value={maintForm.performedBy} onChange={handleFormChange} required />
+                    <SelectInput
+                        label="Realizado Por"
+                        name="performedBy"
+                        value={maintForm.performedBy}
+                        onChange={handleFormChange}
+                        options={users.map(user => ({ value: user.name, label: user.name }))}
+                        required
+                    />
                     <TextInput label="Descripción del Trabajo" name="description" value={maintForm.description} onChange={handleFormChange} required />
                     <FileInput label="Adjuntar PDF (Opcional)" id="attachment" name="attachment" onFileChange={handleFileChange} />
                     <div className="flex justify-end pt-4 space-x-2">
