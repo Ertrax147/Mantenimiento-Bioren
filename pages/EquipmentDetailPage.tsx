@@ -7,7 +7,7 @@ import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import { getStatusColor, getCriticalityColor } from '../components/equipment/EquipmentListItem';
 // Asegúrate de que ambas funciones se importen desde utils/maintenance
-import { calculateMaintenanceDetails, transformApiDataToEquipment } from '../utils/maintenance';
+import { transformApiDataToEquipment } from '../utils/maintenance';
 import { PaperClipIcon, ArrowLeftIcon, PencilSquareIcon, TrashIcon, PlusCircleIcon } from '@heroicons/react/24/outline';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale/es';
@@ -44,8 +44,7 @@ const EquipmentDetailPage: React.FC = () => {
         setIsLoading(true);
         try {
             const equipData = await getEquipmentById(equipmentId);
-            const transformedData = transformApiDataToEquipment(equipData);
-            const processedData = calculateMaintenanceDetails(transformedData);
+            const processedData = transformApiDataToEquipment(equipData);
             setEquipment(processedData);
             // Los registros de mantenimiento ya vienen en la respuesta del equipo
             setMaintenanceHistory(equipData.maintenanceRecords || []);

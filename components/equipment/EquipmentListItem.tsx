@@ -38,12 +38,13 @@ const EquipmentListItem: React.FC<EquipmentListItemProps> = ({ equipment, onDele
     const handleView = () => navigate(`/equipment/${equipment.id}`);
     const handleEdit = () => navigate(`/equipment/${equipment.id}/edit`);
 
+    // Usar directamente la fecha del backend, asegurando formato correcto
     const displayDate = () => {
         if (!equipment.nextMaintenanceDate || equipment.nextMaintenanceDate === 'N/D') {
             return 'N/D';
         }
+        // Asegurarse de que la fecha sea ISO y sin desfase de zona horaria
         const date = new Date(equipment.nextMaintenanceDate);
-        // --- CAMBIO DE FORMATO AQUÍ ---
         return isValid(date) ? format(date, 'dd/MM/yyyy') : 'N/D';
     };
 

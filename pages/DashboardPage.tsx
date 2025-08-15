@@ -11,7 +11,6 @@ import SimplePieChart from '../components/charts/SimplePieChart';
 import SimpleBarChart from '../components/charts/SimpleBarChart';
 
 import { Equipment, IssueReport, ChartDataPoint, UserRole } from '../types';
-import { calculateMaintenanceDetails, transformApiDataToEquipment } from '../utils/maintenance';
 import { getEquipments, EquipmentResponse } from '../lib/api/services/equipmentService';
 import { getIssueReports } from '../lib/api/services/issueReportService';
 import { WrenchScrewdriverIcon, CheckCircleIcon, ClockIcon, ExclamationTriangleIcon } from '@heroicons/react/24/solid';
@@ -97,7 +96,13 @@ const DashboardPage: React.FC = () => {
     const equipmentStats = useMemo(() => {
         const processedEquipment = userFilteredData.equipment.map(equip => {
             const equipment = mapToEquipment(equip);
-            return calculateMaintenanceDetails(equipment);
+            return {
+                id: equipment.id,
+                name: equipment.name,
+                status: equipment.status,
+                nextMaintenanceDate: equipment.nextMaintenanceDate,
+                // No usar calculateMaintenanceDetails aquí, ya que no es necesario
+            };
         });
 
         const okCount = processedEquipment.filter(e => e.status === 'OK').length;

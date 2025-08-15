@@ -1,6 +1,5 @@
 // pages/EquipmentPage.tsx
 
-import { calculateMaintenanceDetails, transformApiDataToEquipment } from '../utils/maintenance';
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Equipment, UserRole } from '../types';
@@ -14,7 +13,7 @@ import { getEquipments, deleteEquipment } from '../lib/api/services/equipmentSer
 
 const EquipmentPage: React.FC = () => {
     const [allEquipment, setAllEquipment] = useState<Equipment[]>([]);
-    const [filteredEquipment, setFilteredEquipment] = useState<Array<Equipment & { status: 'OK' | 'Advertencia' | 'Vencido', nextMaintenanceDate: string }>>([]);
+    const [filteredEquipment, setFilteredEquipment] = useState<Equipment[]>([]);
     const [isConfirmDeleteModalOpen, setIsConfirmDeleteModalOpen] = useState(false);
     const [deletingEquipmentId, setDeletingEquipmentId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
@@ -30,9 +29,8 @@ const EquipmentPage: React.FC = () => {
     useEffect(() => {
         const fetchEquipment = async () => {
             try {
-                const dataFromApi: any[] = await getEquipments();
-                const transformedData: Equipment[] = dataFromApi.map(transformApiDataToEquipment);
-                setAllEquipment(transformedData);
+                const dataFromApi: Equipment[] = await getEquipments();
+                setAllEquipment(dataFromApi);
                 setError(null);
                 setIsLoading(false);
             } catch (error) {
@@ -44,10 +42,8 @@ const EquipmentPage: React.FC = () => {
         fetchEquipment();
     }, []);
 
-
     useEffect(() => {
-        let tempEquipment = allEquipment.map(calculateMaintenanceDetails);
-
+        let tempEquipment = [...allEquipment];
         if (searchTerm) {
             tempEquipment = tempEquipment.filter(eq =>
                 eq.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
