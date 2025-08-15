@@ -8,8 +8,12 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -83,6 +87,28 @@ public class EquipmentController {
     @GetMapping("/exists/institutionalId/{institutionalId}")
     public boolean existsByInstitutionalId(@PathVariable String institutionalId) {
         return equipmentService.existsByInstitutionalId(institutionalId);
+    }
+
+    /**
+     * Añade un nuevo registro de mantenimiento a un equipo.
+     */
+    @PostMapping("/{id}/maintenance")
+    @PreAuthorize("hasAnyRole('BIOREN_ADMIN', 'UNIT_MANAGER')")
+    public ResponseEntity<Equipment.EquipmentDTO> addMaintenanceRecord(
+            @PathVariable Long id,
+            @RequestParam("description") String description,
+            @RequestParam("performedBy") String performedBy,
+            @RequestParam("date") String date,
+            @RequestParam(value = "attachment", required = false) MultipartFile attachment,
+            @AuthenticationPrincipal UserPrincipal principal) throws IOException {
+
+        User user = principalToUser(principal);
+        LocalDate maintenanceDate = LocalDate.parse(date);
+
+        Equipment updatedEquipment = equipmentService.addMaintenanceRecord(id, description, performedBy, maintenanceDate, attachment, user);
+        updatedEquipment.calcularProximaMantencionYStatus();
+
+        return ResponseEntity.ok(toDTO(updatedEquipment));
     }
 
     @Data

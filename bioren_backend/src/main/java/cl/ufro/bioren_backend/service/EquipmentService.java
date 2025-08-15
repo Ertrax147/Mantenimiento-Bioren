@@ -1,16 +1,20 @@
 package cl.ufro.bioren_backend.service;
 
 import cl.ufro.bioren_backend.model.Equipment;
+import cl.ufro.bioren_backend.model.MaintenanceRecord;
 import cl.ufro.bioren_backend.model.User;
 import cl.ufro.bioren_backend.model.UserRole;
 import cl.ufro.bioren_backend.repository.EquipmentRepository;
-import cl.ufro.bioren_backend.repository.UserRepository;
+import cl.ufro.bioren_backend.repository.MaintenanceRecordRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Servicio para la gestión de equipos, con validación de permisos según el rol del usuario.
@@ -19,7 +23,8 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class EquipmentService {
     private final EquipmentRepository equipmentRepository;
-    private final UserRepository userRepository;
+    private final MaintenanceRecordRepository maintenanceRecordRepository;
+    private final FileStorageService fileStorageService;
 
     /**
      * Obtiene todos los equipos según el rol y unidad del usuario.
@@ -90,4 +95,31 @@ public class EquipmentService {
     public boolean existsByInstitutionalId(String institutionalId) {
         return equipmentRepository.findByInstitutionalId(institutionalId) != null;
     }
-} 
+
+    public Equipment addMaintenanceRecord(Long equipmentId, String description, String performedBy, LocalDate date, MultipartFile attachment, User user) throws IOException {
+        Equipment equipment = getEquipmentById(equipmentId, user);
+
+        MaintenanceRecord record = new MaintenanceRecord();
+        record.setDescription(description);
+        record.setPerformedBy(performedBy);
+        record.setDate(date);
+        record.setEquipment(equipment);
+
+        if (attachment != null && !attachment.isEmpty()) {
+            String fileName = fileStorageService.storeFile(attachment);
+            String fileUrl = "/uploads/" + fileName; // O la URL completa si es necesario
+
+            MaintenanceRecord.Attachment newAttachment = new MaintenanceRecord.Attachment(attachment.getOriginalFilename(), fileUrl);
+
+            if (record.getAttachments() == null) {
+                record.setAttachments(new ArrayList<>());
+            }
+            record.getAttachments().add(newAttachment);
+        }
+
+        maintenanceRecordRepository.save(record);
+
+        equipment.setLastMaintenanceDate(date);
+        return equipmentRepository.save(equipment);
+    }
+}
