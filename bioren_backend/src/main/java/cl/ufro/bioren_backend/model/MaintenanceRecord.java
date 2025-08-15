@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
 import java.util.List;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 /**
  * Entidad que representa un registro de mantenimiento de un equipo.
@@ -33,8 +34,9 @@ public class MaintenanceRecord {
     private List<Attachment> attachments;
 
     /** Equipo al que pertenece este registro */
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "equipment_id")
+    @JsonBackReference
     private Equipment equipment;
 
     /**

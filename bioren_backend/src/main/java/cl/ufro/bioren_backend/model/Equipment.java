@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
 import java.util.List;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 /**
  * Entidad que representa un equipo institucional.
@@ -57,7 +58,8 @@ public class Equipment {
     private MaintenanceFrequency maintenanceFrequency;
 
     /** Registros de mantenimiento asociados al equipo */
-    @OneToMany(mappedBy = "equipment", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "equipment")
+    @JsonManagedReference
     private List<MaintenanceRecord> maintenanceRecords;
 
     /** Instrucciones personalizadas de mantenimiento (opcional) */
