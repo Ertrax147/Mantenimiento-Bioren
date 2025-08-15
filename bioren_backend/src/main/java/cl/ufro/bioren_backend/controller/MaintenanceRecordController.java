@@ -39,6 +39,24 @@ public class MaintenanceRecordController {
     }
 
     /**
+     * Endpoint de prueba para verificar la carga de relaciones.
+     */
+    @GetMapping("/test/{id}")
+    public MaintenanceRecord getByIdWithRelations(@PathVariable Long id, @AuthenticationPrincipal UserPrincipal principal) {
+        User user = principalToUser(principal);
+        MaintenanceRecord record = maintenanceRecordService.getById(id, user);
+        
+        // Log de depuración
+        System.out.println("DEBUG: Registro encontrado - ID: " + record.getId());
+        System.out.println("DEBUG: performedBy: " + record.getPerformedBy());
+        if (record.getPerformedBy() != null) {
+            System.out.println("DEBUG: Usuario - ID: " + record.getPerformedBy().getId() + ", Nombre: " + record.getPerformedBy().getName());
+        }
+        
+        return record;
+    }
+
+    /**
      * Crea un nuevo registro de mantenimiento (admin o jefe de unidad de su unidad).
      */
     @PostMapping
@@ -66,6 +84,24 @@ public class MaintenanceRecordController {
     public void delete(@PathVariable Long id, @AuthenticationPrincipal UserPrincipal principal) {
         User user = principalToUser(principal);
         maintenanceRecordService.delete(id, user);
+    }
+
+    /**
+     * Obtiene registros de mantenimiento por usuario que los realizó.
+     */
+    @GetMapping("/user/{userId}")
+    public List<MaintenanceRecord> getByPerformedByUser(@PathVariable Long userId, @AuthenticationPrincipal UserPrincipal principal) {
+        User user = principalToUser(principal);
+        return maintenanceRecordService.getByPerformedByUser(userId, user);
+    }
+
+    /**
+     * Obtiene registros de mantenimiento por equipo y usuario.
+     */
+    @GetMapping("/equipment/{equipmentId}/user/{userId}")
+    public List<MaintenanceRecord> getByEquipmentAndUser(@PathVariable Long equipmentId, @PathVariable Long userId, @AuthenticationPrincipal UserPrincipal principal) {
+        User user = principalToUser(principal);
+        return maintenanceRecordService.getByEquipmentAndUser(equipmentId, userId, user);
     }
 
     /**

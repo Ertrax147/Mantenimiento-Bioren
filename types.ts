@@ -38,7 +38,7 @@ export interface MaintenanceRecord {
   id: string;
   date: string; // ISO string
   description: string;
-  performedBy: string;
+  performedBy: User; // Ahora es una referencia al usuario
   attachments: { name: string; url: string }[]; // Simulated PDF attachments
 }
 

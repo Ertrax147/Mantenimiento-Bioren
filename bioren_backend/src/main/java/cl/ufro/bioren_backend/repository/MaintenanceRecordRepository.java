@@ -13,4 +13,13 @@ import java.util.List;
 public interface MaintenanceRecordRepository extends JpaRepository<MaintenanceRecord, Long> {
     // Buscar registros por equipo
     List<MaintenanceRecord> findByEquipmentId(Long equipmentId);
+    
+    // Buscar registros por usuario que realizó el mantenimiento
+    List<MaintenanceRecord> findByPerformedById(Long performedById);
+    
+    // Buscar registros por equipo y usuario
+    List<MaintenanceRecord> findByEquipmentIdAndPerformedById(Long equipmentId, Long performedById);
+    
+    // Buscar registros por unidad del usuario
+    List<MaintenanceRecord> findByPerformedByUnit(String unit);
 } 

@@ -39,6 +39,42 @@ public class MaintenanceRecordService {
     }
 
     /**
+     * Obtiene registros de mantenimiento por usuario que los realizó.
+     */
+    public List<MaintenanceRecord> getByPerformedByUser(Long userId, User user) {
+        if (user.getRole() == UserRole.BIOREN_ADMIN) {
+            return maintenanceRecordRepository.findByPerformedById(userId);
+        } else {
+            // Solo si el usuario actual tiene permisos para ver registros de esa unidad
+            List<MaintenanceRecord> records = maintenanceRecordRepository.findByPerformedById(userId);
+            return records.stream()
+                    .filter(mr -> {
+                        Equipment eq = mr.getEquipment();
+                        return eq != null && user.getUnit() != null && user.getUnit().equals(eq.getLocationUnit());
+                    })
+                    .toList();
+        }
+    }
+
+    /**
+     * Obtiene registros de mantenimiento por equipo y usuario.
+     */
+    public List<MaintenanceRecord> getByEquipmentAndUser(Long equipmentId, Long userId, User user) {
+        if (user.getRole() == UserRole.BIOREN_ADMIN) {
+            return maintenanceRecordRepository.findByEquipmentIdAndPerformedById(equipmentId, userId);
+        } else {
+            // Solo si el usuario actual tiene permisos para ver ese equipo
+            Equipment equipment = equipmentRepository.findById(equipmentId)
+                    .orElseThrow(() -> new RuntimeException("Equipo no encontrado"));
+            
+            if (user.getUnit() != null && user.getUnit().equals(equipment.getLocationUnit())) {
+                return maintenanceRecordRepository.findByEquipmentIdAndPerformedById(equipmentId, userId);
+            }
+            throw new AccessDeniedException("No tienes permiso para ver registros de este equipo");
+        }
+    }
+
+    /**
      * Obtiene un registro de mantenimiento por su ID, validando permisos.
      */
     public MaintenanceRecord getById(Long id, User user) {

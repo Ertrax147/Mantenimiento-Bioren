@@ -144,7 +144,7 @@ public class Equipment {
         private LocalDate lastMaintenanceDate;
         private UserDTO encargado;
         private MaintenanceFrequency maintenanceFrequency;
-        private List<MaintenanceRecord> maintenanceRecords;
+        private List<MaintenanceRecord.MaintenanceRecordDTO> maintenanceRecords;
         private String customMaintenanceInstructions;
         private EquipmentCriticality criticality;
         private String status;

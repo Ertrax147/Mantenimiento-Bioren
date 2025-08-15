@@ -39,7 +39,7 @@ const EquipmentDetailPage: React.FC = () => {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [users, setUsers] = useState<User[]>([]);
 
-    const [maintForm, setMaintForm] = useState({ description: '', performedBy: '', date: '' });
+    const [maintForm, setMaintForm] = useState({ description: '', performedByUserId: '', date: '' });
     const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
 
     const fetchUsers = async () => {
@@ -87,7 +87,7 @@ const EquipmentDetailPage: React.FC = () => {
 
         const formData = new FormData();
         formData.append('description', maintForm.description);
-        formData.append('performedBy', maintForm.performedBy);
+        formData.append('performedByUserId', maintForm.performedByUserId);
         formData.append('date', maintForm.date);
         if (attachmentFile) {
             formData.append('attachment', attachmentFile);
@@ -97,7 +97,7 @@ const EquipmentDetailPage: React.FC = () => {
             await createMaintenanceRecord(equipmentId, formData);
             alert('Registro de mantenimiento guardado exitosamente.');
             setIsModalOpen(false);
-            setMaintForm({ description: '', performedBy: '', date: '' });
+            setMaintForm({ description: '', performedByUserId: '', date: '' });
             setAttachmentFile(null);
             fetchAllData();
         } catch (error) {
@@ -178,7 +178,10 @@ const EquipmentDetailPage: React.FC = () => {
                             <li key={record.id} className="p-4 hover:bg-gray-50">
                                 <div className="flex justify-between items-center mb-1">
                                     <p className="text-md font-semibold text-bioren-blue">Fecha: {safeFormatDate(record.date)}</p>
-                                    <p className="text-sm text-gray-500">Por: {record.performedBy}</p>
+                                    <p className="text-sm text-gray-500">
+                                        Por: {record.performedBy?.name || 'Usuario no disponible'}
+                                        {record.performedBy?.unit && ` (${record.performedBy.unit})`}
+                                    </p>
                                 </div>
                                 <p className="text-sm text-gray-700 mb-2">{record.description}</p>
 
@@ -214,10 +217,10 @@ const EquipmentDetailPage: React.FC = () => {
                     <DateInput label="Fecha del Mantenimiento" name="date" value={maintForm.date} onChange={handleFormChange} required />
                     <SelectInput
                         label="Realizado Por"
-                        name="performedBy"
-                        value={maintForm.performedBy}
+                        name="performedByUserId"
+                        value={maintForm.performedByUserId}
                         onChange={handleFormChange}
-                        options={users.map(user => ({ value: user.name, label: user.name }))}
+                        options={users.map(user => ({ value: user.id.toString(), label: `${user.name} (${user.unit || 'Sin unidad'})` }))}
                         required
                     />
                     <TextInput label="Descripción del Trabajo" name="description" value={maintForm.description} onChange={handleFormChange} required />

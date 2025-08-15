@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
+import cl.ufro.bioren_backend.model.MaintenanceRecord;
 
 /**
  * Controlador REST para la gestión de equipos.
@@ -97,7 +98,7 @@ public class EquipmentController {
     public ResponseEntity<Equipment.EquipmentDTO> addMaintenanceRecord(
             @PathVariable Long id,
             @RequestParam("description") String description,
-            @RequestParam("performedBy") String performedBy,
+            @RequestParam("performedByUserId") Long performedByUserId,
             @RequestParam("date") String date,
             @RequestParam(value = "attachment", required = false) MultipartFile attachment,
             @AuthenticationPrincipal UserPrincipal principal) throws IOException {
@@ -105,7 +106,7 @@ public class EquipmentController {
         User user = principalToUser(principal);
         LocalDate maintenanceDate = LocalDate.parse(date);
 
-        Equipment updatedEquipment = equipmentService.addMaintenanceRecord(id, description, performedBy, maintenanceDate, attachment, user);
+        Equipment updatedEquipment = equipmentService.addMaintenanceRecord(id, performedByUserId, description, maintenanceDate, attachment, user);
         updatedEquipment.calcularProximaMantencionYStatus();
 
         return ResponseEntity.ok(toDTO(updatedEquipment));
@@ -127,6 +128,44 @@ public class EquipmentController {
                 eq.getEncargado().getUnit()
             );
         }
+
+        // Convertir registros de mantenimiento a DTOs
+        List<MaintenanceRecord.MaintenanceRecordDTO> maintenanceRecordsDTO = null;
+        if (eq.getMaintenanceRecords() != null) {
+            System.out.println("DEBUG: Número de registros de mantenimiento: " + eq.getMaintenanceRecords().size());
+            maintenanceRecordsDTO = eq.getMaintenanceRecords().stream()
+                .map(record -> {
+                    System.out.println("DEBUG: Procesando registro ID: " + record.getId());
+                    System.out.println("DEBUG: performedBy: " + record.getPerformedBy());
+                    
+                    MaintenanceRecord.MaintenanceRecordDTO.UserDTO performedByDTO = null;
+                    if (record.getPerformedBy() != null) {
+                        System.out.println("DEBUG: Usuario encontrado - ID: " + record.getPerformedBy().getId() + ", Nombre: " + record.getPerformedBy().getName());
+                        performedByDTO = new MaintenanceRecord.MaintenanceRecordDTO.UserDTO(
+                            record.getPerformedBy().getId(),
+                            record.getPerformedBy().getName(),
+                            record.getPerformedBy().getEmail(),
+                            record.getPerformedBy().getRole() != null ? record.getPerformedBy().getRole().name() : null,
+                            record.getPerformedBy().getUnit()
+                        );
+                    } else {
+                        System.out.println("DEBUG: performedBy es NULL para el registro ID: " + record.getId());
+                    }
+                    
+                    return new MaintenanceRecord.MaintenanceRecordDTO(
+                        record.getId(),
+                        record.getDate(),
+                        record.getDescription(),
+                        performedByDTO,
+                        record.getAttachments(),
+                        record.getEquipment() != null ? record.getEquipment().getId() : null
+                    );
+                })
+                .toList();
+        } else {
+            System.out.println("DEBUG: No hay registros de mantenimiento");
+        }
+
         return new Equipment.EquipmentDTO(
             eq.getId(),
             eq.getInstitutionalId(),
@@ -139,7 +178,7 @@ public class EquipmentController {
             eq.getLastMaintenanceDate(),
             encargadoDTO,
             eq.getMaintenanceFrequency(),
-            eq.getMaintenanceRecords(),
+            maintenanceRecordsDTO,
             eq.getCustomMaintenanceInstructions(),
             eq.getCriticality(),
             eq.getStatus(),

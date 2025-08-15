@@ -6,6 +6,7 @@ import cl.ufro.bioren_backend.model.User;
 import cl.ufro.bioren_backend.model.UserRole;
 import cl.ufro.bioren_backend.repository.EquipmentRepository;
 import cl.ufro.bioren_backend.repository.MaintenanceRecordRepository;
+import cl.ufro.bioren_backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -25,15 +26,16 @@ public class EquipmentService {
     private final EquipmentRepository equipmentRepository;
     private final MaintenanceRecordRepository maintenanceRecordRepository;
     private final FileStorageService fileStorageService;
+    private final UserRepository userRepository;
 
     /**
      * Obtiene todos los equipos según el rol y unidad del usuario.
      */
     public List<Equipment> getAllEquipments(User user) {
         if (user.getRole() == UserRole.BIOREN_ADMIN) {
-            return equipmentRepository.findAll();
+            return equipmentRepository.findAllWithMaintenanceRecords();
         } else {
-            return equipmentRepository.findByLocationUnit(user.getUnit());
+            return equipmentRepository.findByLocationUnitWithMaintenanceRecords(user.getUnit());
         }
     }
 
@@ -41,7 +43,7 @@ public class EquipmentService {
      * Obtiene un equipo por su ID, validando permisos.
      */
     public Equipment getEquipmentById(Long id, User user) {
-        Equipment equipment = equipmentRepository.findById(id)
+        Equipment equipment = equipmentRepository.findByIdWithMaintenanceRecords(id)
                 .orElseThrow(() -> new RuntimeException("Equipo no encontrado"));
         // Un admin puede ver cualquier equipo. Otros usuarios solo pueden ver equipos de su unidad.
         if (user.getRole() == UserRole.BIOREN_ADMIN) {
@@ -96,14 +98,22 @@ public class EquipmentService {
         return equipmentRepository.findByInstitutionalId(institutionalId) != null;
     }
 
-    public Equipment addMaintenanceRecord(Long equipmentId, String description, String performedBy, LocalDate date, MultipartFile attachment, User user) throws IOException {
+    public Equipment addMaintenanceRecord(Long equipmentId, Long performedByUserId, String description, LocalDate date, MultipartFile attachment, User user) throws IOException {
         Equipment equipment = getEquipmentById(equipmentId, user);
+        
+        // Buscar el usuario que realizó el mantenimiento
+        User performedByUser = userRepository.findById(performedByUserId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        System.out.println("DEBUG: Usuario encontrado para mantenimiento - ID: " + performedByUser.getId() + ", Nombre: " + performedByUser.getName());
 
         MaintenanceRecord record = new MaintenanceRecord();
         record.setDescription(description);
-        record.setPerformedBy(performedBy);
+        record.setPerformedBy(performedByUser);
         record.setDate(date);
         record.setEquipment(equipment);
+
+        System.out.println("DEBUG: Registro creado con performedBy: " + record.getPerformedBy());
 
         if (attachment != null && !attachment.isEmpty()) {
             String fileName = fileStorageService.storeFile(attachment);
@@ -117,7 +127,8 @@ public class EquipmentService {
             record.getAttachments().add(newAttachment);
         }
 
-        maintenanceRecordRepository.save(record);
+        MaintenanceRecord savedRecord = maintenanceRecordRepository.save(record);
+        System.out.println("DEBUG: Registro guardado con ID: " + savedRecord.getId() + ", performedBy: " + savedRecord.getPerformedBy());
 
         equipment.setLastMaintenanceDate(date);
         return equipmentRepository.save(equipment);
